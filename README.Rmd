@@ -14,3 +14,123 @@ knitr::opts_chunk$set(
 # lais_engler-lizandra
 
 ## Análise dos dados de consumo de ovos de galinha (2020)
+
+### Carregando os pacotes
+```{r, message=FALSE, error=FALSE, warning=FALSE}
+library(readxl)
+library(tidyverse)
+library(janitor)
+library(forcats)
+source("r/my-function.R")
+library(corrplot)
+```
+
+
+### Entrendo com o banco de dados
+```{r}
+dados <- read_excel("data/dados_ovos_consumo.xlsx") |> 
+  janitor::clean_names()
+names(dados)
+```
+
+### Selecionar as variáveis para a análise
+
+```{r}
+# Renda
+dados$renda <- as_factor(dados$renda)
+dados$renda |>  levels()
+dados$renda <- lvls_reorder(dados$renda, c(6,2,1,3,5,4))
+dados$renda |>  levels()
+
+# escolaridade
+dados$nivel_de_escolaridade <- as_factor(dados$nivel_de_escolaridade)
+dados$nivel_de_escolaridade |>  levels()
+dados$nivel_de_escolaridade <- lvls_reorder(dados$nivel_de_escolaridade, c(4,3,1,2))
+dados$nivel_de_escolaridade |>  levels()
+
+#qual_a_frequencia_do_seu_consumo_de_ovos
+dados$qual_a_frequencia_do_seu_consumo_de_ovos <- as_factor(dados$qual_a_frequencia_do_seu_consumo_de_ovos)
+dados$qual_a_frequencia_do_seu_consumo_de_ovos |>  levels()
+dados$qual_a_frequencia_do_seu_consumo_de_ovos <- lvls_reorder(dados$qual_a_frequencia_do_seu_consumo_de_ovos, c(3, 2, 1, 4))
+dados$qual_a_frequencia_do_seu_consumo_de_ovos |>  levels()
+
+#quanto_voce_gasta_mensalmente_com_a_compra_de_ovos
+dados$quanto_voce_gasta_mensalmente_com_a_compra_de_ovos <- as_factor(dados$quanto_voce_gasta_mensalmente_com_a_compra_de_ovos)
+dados$quanto_voce_gasta_mensalmente_com_a_compra_de_ovos |>  levels()
+
+dados$quanto_voce_gasta_mensalmente_com_a_compra_de_ovos <- lvls_reorder(dados$quanto_voce_gasta_mensalmente_com_a_compra_de_ovos, c(3,2,1,4))
+dados$quanto_voce_gasta_mensalmente_com_a_compra_de_ovos |>  levels()
+
+#voce_sabe_quais_doencas_sao_transmitidas_pelos_ovos
+dados$voce_sabe_quais_doencas_sao_transmitidas_pelos_ovos <- 
+  dados$voce_sabe_quais_doencas_sao_transmitidas_pelos_ovos == "Sim"
+
+#voce_acha_que_o_ovo_deve_ser_refrigerado
+dados$voce_acha_que_o_ovo_deve_ser_refrigerado <- 
+  dados$voce_acha_que_o_ovo_deve_ser_refrigerado == "Sim"
+
+#voce_acha_que_o_ovo_deve_ser_refrigerado
+dados$voce_esta_disposto_a_pagar_mais_por_ovos_que_vem_de_sistemas_de_criacao_com_selo_de_bem_estar_o_bem_estar_visa_que_o_animal_expresse_seus_comportamentos_naturais_viva_em_ambiente_limpo_e_adequado_tenha_alimentacao_nutritiva_entre_outros <- 
+  dados$voce_esta_disposto_a_pagar_mais_por_ovos_que_vem_de_sistemas_de_criacao_com_selo_de_bem_estar_o_bem_estar_visa_que_o_animal_expresse_seus_comportamentos_naturais_viva_em_ambiente_limpo_e_adequado_tenha_alimentacao_nutritiva_entre_outros == "Sim"
+
+#voce_se_preocupa_com_o_impacto_ambiental_que_a_avicultura_de_postura_proporciona_poluicao_do_ar_solo_agua
+dados$voce_se_preocupa_com_o_impacto_ambiental_que_a_avicultura_de_postura_proporciona_poluicao_do_ar_solo_agua <- 
+  dados$voce_se_preocupa_com_o_impacto_ambiental_que_a_avicultura_de_postura_proporciona_poluicao_do_ar_solo_agua == "Sim"
+glimpse(dados)
+
+```
+
+## Extrair as variáveis
+
+
+```{r}
+da <- dados[c(5, 6, 7, 16)]
+names(da) <- c("Renda",
+               "Escolaridade",
+               "Consumo",
+               "Gasto_mensal")
+```
+
+##
+
+```{r}
+da$Gasto_mensal   |>  levels()
+da <- da |> 
+  mutate(
+    Renda = case_when(
+      Renda=="Não possuo renda fixa" ~ 1,
+      Renda=="Até 2 salários mínimos" ~2,
+      Renda=="2 a 4 salários mínimos" ~ 3,
+      Renda=="4 a 10 salários mínimos" ~ 4,
+      Renda=="10 a 20 salários mínimos" ~ 5,
+      Renda=="Acima de 20 salários mínimos" ~6
+    ),
+    
+    Escolaridade = case_when(
+      Escolaridade=="Ensino Fundamental (1º ao 9º ano)" ~ 1,
+      Escolaridade=="Ensino Médio (1º ao 3º ano)" ~2,
+      Escolaridade=="Graduação"   ~ 3,
+      Escolaridade=="Pós-graduação" ~ 4
+    ),
+    
+    Consumo = case_when(
+      Consumo=="Não consumo ovos"  ~ 1,
+      Consumo=="1 a 3 vezes na semana" ~2,
+      Consumo=="4 a 6 vezes na semana"   ~ 3,
+      Consumo=="Todos os dias"  ~ 4
+    ),
+    
+    Gasto_mensal = case_when(
+      Gasto_mensal=="10.0"   ~ 1,
+      Gasto_mensal=="20.0"  ~2,
+      Gasto_mensal=="30.0"   ~ 3,
+      Gasto_mensal=="R$ 40 ou mais"  ~ 4
+    )
+  )
+names(da)
+glimpse(da)
+mcor <- cor(da |>  drop_na())
+corrplot(mcor)
+corrplot.mixed(mcor,lower = "number",lower.col = "black")
+```
+
